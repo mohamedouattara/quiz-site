@@ -1,4 +1,14 @@
+console.log('app.js: Script loading started');
+
+// Global Error Handler for debugging
+window.onerror = function (msg, url, lineNo, columnNo, error) {
+    console.error('Global Error caught:', msg, 'at', lineNo, ':', columnNo);
+    alert('Error: ' + msg + '\nLine: ' + lineNo);
+    return false;
+};
+
 document.addEventListener('DOMContentLoaded', () => {
+    console.log('app.js: DOMContentLoaded reached');
     // PDF.js Worker
     if (window.pdfjsLib) {
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -24,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const correctCountText = document.getElementById('correct-count');
     const incorrectCountText = document.getElementById('incorrect-count');
     const reviewList = document.getElementById('review-list');
+    const languageSelect = document.getElementById('language-select');
+    const recommendationsContainer = document.getElementById('recommendations');
+    const chipsWrapper = document.getElementById('chips-wrapper');
 
     // State
     let currentQuiz = [];
@@ -101,8 +114,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Quiz Generation (Gemini AI) ---
     generateBtn.addEventListener('click', async () => {
+        console.log('Generate Quiz button clicked');
         const content = textPaste.value.trim();
-        const apiKey = document.getElementById('api-key').value.trim();
+
+        // Safer environment variable access
+        let apiKey = '';
+        try {
+            apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+        } catch (e) {
+            console.warn('Vite environment variables not available. Falling back to UI check.');
+        }
+
+        if (!apiKey) {
+            apiKey = document.getElementById('api-key')?.value.trim();
+        }
+
+        console.log('Content length:', content.length);
+        console.log('API Key present:', !!apiKey);
 
         if (!content) {
             alert('Please provide some notes first!');
@@ -110,7 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (!apiKey) {
-            alert('Please enter your Gemini API Key. You can get a free one from Google AI Studio.');
+            alert('Gemini API Key is missing. Please check your .env file or the configuration.');
             return;
         }
 
@@ -130,18 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     async function generateQuizWithGemini(text, apiKey) {
+        const questionCount = document.getElementById('question-count-select').value || 5;
+        const language = languageSelect.value || 'French';
+
         // v1 is the stable version and supports gemini-1.5-flash
         const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent`;
 
         const prompt = `
             You are a Quiz Generator specialized in study materials. 
-            Analyze the input text below and generate a quiz with exactly 5 multiple-choice questions.
+            Analyze the input text below and generate a quiz with exactly ${questionCount} multiple-choice questions.
+            The language of the quiz (questions and options) MUST be ${language}, regardless of the input text's language.
             Return ONLY a valid JSON array of objects. Do not include markdown formatting or explanations.
             
             JSON Structure:
             [
               {
-                "question": "The question text",
+                "question": "The question text in ${language}",
                 "options": ["Option 1", "Option 2", "Option 3", "Option 4"],
                 "correct": 0
               }
@@ -152,6 +184,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
 
         try {
+            console.log('Sending request to Gemini API:', url);
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -197,7 +230,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                return JSON.parse(genText);
+                const quizData = JSON.parse(genText);
+                // Try to infer a topic name for recommendations
+                const firstQuestion = quizData[0]?.question || "Quiz";
+                const topic = firstQuestion.split(' ').slice(0, 3).join(' ').replace(/[?.,!]/g, '');
+                saveTopic(topic);
+                return quizData;
             } catch (e) {
                 console.error("Failed to parse AI response:", genText);
                 throw new Error("The AI returned an invalid response format. Please try again.");
@@ -301,6 +339,12 @@ document.addEventListener('DOMContentLoaded', () => {
         correctCountText.textContent = score;
         incorrectCountText.textContent = currentQuiz.length - score;
 
+        // Update CSS variable for the circular gauge
+        const scoreCircle = document.querySelector('.score-circle');
+        if (scoreCircle) {
+            scoreCircle.style.setProperty('--score-percent', percent);
+        }
+
         generateReview();
         showSection('results');
     }
@@ -328,21 +372,91 @@ document.addEventListener('DOMContentLoaded', () => {
     const feedbackSuccess = document.getElementById('feedback-success');
 
     if (feedbackForm) {
-        feedbackForm.addEventListener('submit', (e) => {
+        feedbackForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+            console.log('Feedback form submitted');
 
-            // In a real app, you would send this to a server
+            // Safer environment variable access
+            let formspreeId = '';
+            try {
+                formspreeId = import.meta.env.VITE_FORMSPREE_ID;
+            } catch (e) {
+                console.warn('Vite environment variables not available for Formspree.');
+            }
+
+            if (!formspreeId) {
+                formspreeId = document.getElementById('formspree-id')?.value.trim();
+            }
+
             const email = document.getElementById('feedback-email').value;
             const message = document.getElementById('feedback-msg').value;
 
-            console.log('Feedback received:', { email, message });
+            const submitBtn = feedbackForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.textContent = 'Sending...';
+            submitBtn.disabled = true;
 
-            // Simulate success
-            feedbackForm.style.display = 'none';
-            feedbackSuccess.style.display = 'block';
+            try {
+                const response = await fetch(`https://formspree.io/f/${formspreeId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, message })
+                });
 
-            // Optional: Use Formspree or similar for real emails
-            // fetch('https://formspree.io/f/your-id', { ... })
+                if (response.ok) {
+                    feedbackForm.style.display = 'none';
+                    feedbackSuccess.style.display = 'block';
+                } else {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error('Formspree Error Status:', response.status);
+                    console.error('Formspree Error Detail:', errorData);
+                    throw new Error(`Failed to send feedback (Status: ${response.status})`);
+                }
+            } catch (err) {
+                console.error('Feedback Submission Exception:', err);
+                alert(`Error sending feedback: ${err.message}. Please check your Formspree ID in .env.`);
+            } finally {
+                submitBtn.textContent = originalText;
+                submitBtn.disabled = false;
+            }
         });
     }
+
+    // --- Recommendations Logic ---
+    function saveTopic(topic) {
+        if (!topic || topic.length < 3) return;
+        let topics = JSON.parse(localStorage.getItem('quiz_topics') || '[]');
+        if (!topics.includes(topic)) {
+            topics.unshift(topic);
+            // Keep only the last 5
+            topics = topics.slice(0, 5);
+            localStorage.setItem('quiz_topics', JSON.stringify(topics));
+            renderRecommendations();
+        }
+    }
+
+    function renderRecommendations() {
+        const topics = JSON.parse(localStorage.getItem('quiz_topics') || '[]');
+        if (topics.length === 0) {
+            recommendationsContainer.style.display = 'none';
+            return;
+        }
+
+        recommendationsContainer.style.display = 'block';
+        chipsWrapper.innerHTML = topics.map(topic => `
+            <div class="chip" data-topic="${topic}">${topic}</div>
+        `).join('');
+
+        document.querySelectorAll('.chip').forEach(chip => {
+            chip.addEventListener('click', () => {
+                const topic = chip.dataset.topic;
+                textPaste.value = `Tell me about ${topic}...`;
+                textPaste.focus();
+                // Optional: Auto-generate? No, let user confirm
+            });
+        });
+    }
+
+    // Initial render
+    renderRecommendations();
 });

@@ -1,47 +1,77 @@
-Quiz site — Netlify deployment
+# 🎓 QuizGen AI - Transform Your Notes into Quizzes
 
-This project is a static site (index.html, app.js, style.css). Below are quick ways to deploy it to Netlify.
+**QuizGen AI** is a modern, high-performance web application that leverages the power of Google Gemini AI to transform your study notes, slides, or PDF documents into interactive multiple-choice quizzes. Perfect for students, teachers, and life-long learners.
 
-1) Quick test locally
+---
 
-Run a simple static server (Python):
+## ✨ Features
 
-```bash
-python -m http.server 3000
+- **🤖 AI-Powered Generation**: Uses Google's `Gemini 1.5/2.5 Flash` models.
+- **🔐 Secure Secrets**: API keys and IDs are managed via `.env` files (Internal mode).
+- **📄 PDF Support**: Upload your PDF lecture notes directly.
+- **⚙️ Configurable Quizzes**: Choose to generate **5, 10, 15, or 20 questions**.
+- **📊 Dynamic Analytics**: Live feedback and circular score gauge.
+- **📩 Feedback Integration**: `Formspree` support for user feedback.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: Vanilla HTML5, CSS3, ES6+ JavaScript.
+- **AI Engine**: Google Gemini API Gateway.
+- **PDF Extraction**: PDF.js (CDN).
+- **Communication**: Formspree API (for feedback).
+- **Deployment**: Netlify ready.
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- [Node.js](https://nodejs.org/) installed on your machine.
+- A **Google Gemini API Key**: Get one for free at [Google AI Studio](https://aistudio.google.com/).
+- (Optional) A **Formspree ID**: Get one at [Formspree.io](https://formspree.io/).
+
+### 2. Configuration
+1. Create a `.env` file in the root directory (you can copy `.env.example`).
+2. Add your secrets:
+```env
+VITE_GEMINI_API_KEY=your_key_here
+VITE_FORMSPREE_ID=your_id_here
 ```
 
-Open http://localhost:3000
-
-2) Deploy using Netlify web UI (drag-and-drop)
-
-- Zip the project folder or open the project folder in your system file explorer.
-- Go to https://app.netlify.com/drop and drag the folder (or the zip) onto the page.
-
-3) Deploy via Git (recommended for continuous deploy)
-
-- Create a GitHub repo and push this project (see commands below).
-- In Netlify, choose "New site from Git" and connect the GitHub repo. Set build command blank and publish directory `.`.
-
-Commands to create a repo locally and push (replace <remote-url>):
-
+### 3. Setup & Run
 ```bash
-git init
-git add .
-git commit -m "Prepare site for Netlify deployment"
-# create remote on GitHub then:
-git remote add origin <remote-url>
-git branch -M main
-git push -u origin main
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
+Open the provided local URL (usually [http://localhost:5173](http://localhost:5173)) in your browser.
 
-4) Deploy via Netlify CLI (requires login)
+### 3. Usage
+1. Open the application.
+2. Select the **Number of Questions** you want.
+3. Upload a `.pdf`, `.txt`, or `.md` file, or paste your text directly.
+4. Click **Generate Quiz** and start learning!
 
-```bash
-npm install -g netlify-cli
-netlify login
-netlify deploy --prod --dir=.
-```
+---
 
-Notes:
-- A `netlify.toml` is included to publish from the project root and to handle SPA redirects.
-- If you want, I can push to a GitHub repo for you (you'll need to provide remote URL or grant access), or I can run Netlify CLI deploy if you authenticate here.
+## ☁️ Deployment
+
+### Netlify (Recommended)
+This project is pre-configured with a `netlify.toml` file.
+
+1. **Netlify Drop**: Drag and drop the project folder onto [Netlify Drop](https://app.netlify.com/drop).
+2. **Netlify CLI**:
+   ```bash
+   npm install -g netlify-cli
+   netlify deploy --prod --dir=.
+   ```
+3. **GitHub Integration**: Push this project to GitHub and connect it to Netlify for automatic deployments on every commit.
+
+---
+
+## 📝 License
+Built with ❤️ for better learning. Feel free to use and improve this project!

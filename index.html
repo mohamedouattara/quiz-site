@@ -547,7 +547,6 @@
             width: 200px;
             height: 200px;
             border-radius: 50%;
-            border: 10px solid var(--glass);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -555,28 +554,22 @@
             margin: 0 auto;
             position: relative;
             box-shadow: 0 0 50px rgba(0, 0, 0, 0.3);
-        }
-
-        .score-circle::after {
-            content: '';
-            position: absolute;
-            inset: -10px;
-            border-radius: 50%;
-            border: 10px solid var(--primary);
-            border-left-color: transparent;
-            border-bottom-color: transparent;
-            transform: rotate(45deg);
+            /* Dynamic background using CSS variable */
+            background: radial-gradient(var(--card-bg) 60%, transparent 61%),
+                conic-gradient(var(--primary) calc(var(--score-percent, 0) * 1%), var(--glass) 0%);
         }
 
         #final-score {
             font-size: 4rem;
             font-weight: 800;
             line-height: 1;
+            z-index: 2;
         }
 
         .percent {
             font-size: 1.5rem;
             color: var(--text-dim);
+            z-index: 2;
         }
 
         .performance-summary {
@@ -779,14 +772,40 @@
                     <textarea id="text-paste" placeholder="Paste your study notes here..."></textarea>
 
                     <div class="api-key-container">
-                        <label for="api-key">Gemini API Key (Required for AI generation)</label>
-                        <input type="password" id="api-key" value="AIzaSyD-sB57A0WnjX3JxbReCd3WaMkYxU10Hns"
-                            placeholder="Enter your Gemini API key...">
-                        <small>Get one for free at <a href="https://aistudio.google.com/" target="_blank">Google AI
-                                Studio</a></small>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label for="question-count-select">Number of Questions</label>
+                                <select id="question-count-select"
+                                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: var(--text-main);">
+                                    <option value="5">5 Questions</option>
+                                    <option value="10">10 Questions</option>
+                                    <option value="15">15 Questions</option>
+                                    <option value="20">20 Questions</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="language-select">Quiz Language</label>
+                                <select id="language-select"
+                                    style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: var(--text-main);">
+                                    <option value="French">Français</option>
+                                    <option value="English">English</option>
+                                    <option value="Spanish">Español</option>
+                                    <option value="Arabic">العربية</option>
+                                    <option value="German">Deutsch</option>
+                                    <option value="Italian">Italiano</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
                     <button id="generate-btn" class="btn btn-glow">Generate Quiz</button>
+                </div>
+
+                <div id="recommendations" class="recommendations-container" style="display: none;">
+                    <h3>Suggested for You</h3>
+                    <div id="chips-wrapper" class="chips-wrapper">
+                        <!-- Recommendation chips will be injected here -->
+                    </div>
                 </div>
             </div>
         </section>
@@ -866,10 +885,10 @@
                 <p>Help us improve your learning experience! Share your thoughts or report a bug.</p>
                 <form id="feedback-form">
                     <div class="input-group">
-                        <input type="email" id="feedback-email" placeholder="Your Email (Optional)">
+                        <input type="email" id="feedback-email" name="email" placeholder="Your Email (Optional)">
                     </div>
                     <div class="input-group">
-                        <textarea id="feedback-msg" placeholder="Tell us what you think..." required
+                        <textarea id="feedback-msg" name="message" placeholder="Tell us what you think..." required
                             style="height: 100px; margin-bottom: 1rem;"></textarea>
                     </div>
                     <button type="submit" class="btn btn-secondary" style="width: 100%;">Send Feedback</button>
@@ -885,7 +904,7 @@
     </footer>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="app.js"></script>
+    <script type="module" src="app.js"></script>
 </body>
 
 </html>
