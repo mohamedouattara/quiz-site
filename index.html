@@ -9,6 +9,10 @@
         content="Generated custom quizzes from your notes and slides instantly using AI. Improve your learning with personalized feedback.">
     <style>
         /* Inlined from style.css */
+        html {
+            scroll-behavior: smooth;
+        }
+
         :root {
             --primary: #6366f1;
             --primary-glow: rgba(99, 102, 241, 0.4);
@@ -22,6 +26,7 @@
             --danger: #ef4444;
             --glass: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --score-percent: 0;
         }
 
         * {
@@ -686,22 +691,405 @@
             color: var(--text-main);
         }
 
+        /* Image Preview */
+        #image-preview-container {
+            display: none;
+            margin-top: 1.5rem;
+            position: relative;
+            max-width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        #image-preview {
+            width: 100%;
+            border-radius: 1rem;
+            border: 2px solid var(--primary);
+        }
+
+        .remove-img {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Quiz Type Switch */
+        .quiz-type-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .type-btn {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1.5rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            color: var(--text-dim);
+            transition: 0.3s;
+        }
+
+        .type-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+        }
+
+        /* Recommendations */
+        .recommendations-container {
+            width: 100%;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        .recommendations-container h3 {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-dim);
+            margin-bottom: 0.75rem;
+            text-align: left;
+            opacity: 0.8;
+        }
+
+        .chips-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .chip {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: var(--text-dim);
+            max-width: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            position: relative;
+        }
+
+        .chip-text {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
+
+        .chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border-color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .chip-delete {
+            opacity: 0.4;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            margin-right: -4px;
+        }
+
+        .chip-delete:hover {
+            opacity: 1;
+            background: var(--danger);
+            color: white;
+        }
+
+        /* Tooltips */
+        [data-tooltip] {
+            position: relative;
+            cursor: help;
+        }
+
+        [data-tooltip]::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(10px);
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            padding: 0.75rem 1rem;
+            border-radius: 0.75rem;
+            font-size: 0.8rem;
+            color: var(--text-main);
+            width: 250px;
+            text-align: left;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            line-height: 1.4;
+            font-weight: 400;
+        }
+
+        [data-tooltip]:hover::before {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            font-size: 11px;
+            font-weight: bold;
+            margin-left: 8px;
+            vertical-align: middle;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem;
+            padding: 2.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal {
+            transform: translateY(0);
+        }
+
+        .profile-list {
+            margin: 1.5rem 0;
+            max-height: 300px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .profile-item {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 1rem;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .profile-item:hover {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .profile-item.active {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .profile-item .avatar {
+            width: 40px;
+            height: 40px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Gamification Styles */
+        .nav-stats {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-left: auto;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 0.5rem 1.25rem;
+            border-radius: 2rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .xp-container {
+            width: 100px;
+            height: 6px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .xp-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-glow));
+            width: 0%;
+            transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .streak-fire {
+            color: #FFAC33;
+            filter: drop-shadow(0 0 5px rgba(255, 172, 51, 0.5));
+            animation: flicker 2s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% {
+                transform: scale(1);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(1.1);
+                opacity: 1;
+            }
+        }
+
+        .level-badge {
+            background: var(--primary);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+        }
+
         /* Animations and Responsive */
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2.5rem;
-            }
-
-            .upload-container {
-                padding: 1.5rem;
-            }
-
-            .performance-summary {
-                gap: 2rem;
+            nav {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem;
+                height: auto;
             }
 
             .nav-links {
                 display: none;
+            }
+
+            .nav-stats {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.5rem;
+                padding: 0.5rem;
+            }
+
+            #player-name {
+                display: none;
+            }
+
+            h1 {
+                font-size: 2.25rem;
+            }
+
+            .hero-content {
+                margin-bottom: 2.5rem;
+            }
+
+            .hero-content p {
+                font-size: 1rem;
+            }
+
+            .upload-container,
+            .results-card {
+                padding: 1.5rem;
+                border-radius: 1.5rem;
+            }
+
+            .quiz-type-nav {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .type-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .performance-summary {
+                flex-direction: column;
+                gap: 1.5rem;
+                align-items: center;
+            }
+
+            .modal {
+                padding: 1.5rem;
+                width: 95%;
+            }
+
+            .xp-container {
+                width: 60px;
+            }
+
+            #how-it-works {
+                padding: 2rem 1rem !important;
+                margin-top: 2rem !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            .stat-item span {
+                font-size: 0.75rem;
             }
         }
     </style>
@@ -731,8 +1119,35 @@
         </div>
         <div class="nav-links">
             <a href="#" class="active">Home</a>
-            <a href="#">How it works</a>
-            <a href="#">Samples</a>
+            <a href="#how-it-works">How it works</a>
+        </div>
+        <div class="nav-stats">
+            <div class="stat-item" id="player-profile" title="Gérer les Profils"
+                style="cursor: pointer; transition: transform 0.2s;">
+                <span class="user-avatar"
+                    style="background: var(--primary); padding: 4px; border-radius: 50%; display: flex;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        stroke-width="2.5">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                </span>
+                <span id="player-name"
+                    style="font-size: 0.8rem; opacity: 0.9; max-width: 100px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Scholar</span>
+            </div>
+            <div class="stat-item" title="Série quotidienne">
+                <span class="streak-fire">🔥</span>
+                <span id="nav-streak">0</span>
+            </div>
+            <div class="stat-item" title="Niveau actuel">
+                <span class="level-badge">LVL <span id="nav-level">1</span></span>
+            </div>
+            <div class="stat-item" style="flex-direction: column; align-items: start; gap: 2px;">
+                <span style="font-size: 0.7rem; color: var(--text-dim);">XP: <span id="nav-xp-val">0</span>/100</span>
+                <div class="xp-container">
+                    <div class="xp-bar" id="nav-xp-bar"></div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -746,6 +1161,20 @@
             </div>
 
             <div class="upload-container">
+                <div id="recommendations" class="recommendations-container"
+                    style="display: none; margin-bottom: 1.5rem;">
+                    <h3>Suggested for You</h3>
+                    <div id="chips-wrapper" class="chips-wrapper" style="justify-content: flex-start;">
+                        <!-- Recommendation chips will be injected here -->
+                    </div>
+                </div>
+
+                <div class="quiz-type-nav">
+                    <button class="type-btn active" data-type="text">Text / PDF</button>
+                    <button class="type-btn" data-type="image">Image / Scan</button>
+                    <button class="type-btn" data-type="url">URL / Link</button>
+                </div>
+
                 <div id="drop-zone" class="drop-zone">
                     <div class="drop-zone-content">
                         <div class="upload-icon">
@@ -757,15 +1186,31 @@
                                 <line x1="12" y1="3" x2="12" y2="15" />
                             </svg>
                         </div>
-                        <h3>Drag & drop your notes here</h3>
-                        <p>Supports .txt, .md, .pdf or paste your text below</p>
+                        <h3 id="upload-title">Drag & drop your notes here</h3>
+                        <p id="upload-subtitle">Supports .txt, .md, .pdf or paste your text below</p>
                         <input type="file" id="file-input" hidden accept=".txt,.md,.pdf">
-                        <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">Browse
-                            Files</button>
+                        <input type="file" id="image-input" hidden accept="image/*">
+                        <button class="btn btn-primary" id="browse-btn">Browse Files</button>
+                    </div>
+
+                    <div id="image-preview-container">
+                        <img id="image-preview" src="" alt="Preview">
+                        <button class="remove-img" id="remove-img-btn">×</button>
                     </div>
                 </div>
 
-                <div class="text-input-container">
+                <div id="url-input-container"
+                    style="display: none; padding: 1.5rem; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 1.25rem; margin-bottom: 2rem;">
+                    <h3 style="margin-bottom: 1rem;">Enter Website URL</h3>
+                    <div style="display: flex; gap: 0.75rem;">
+                        <input type="url" id="url-input" placeholder="https://example.com/article"
+                            style="flex: 1; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); border-radius: 0.75rem; padding: 0.75rem 1rem; color: var(--text-main);">
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-top: 0.75rem;">Notre IA analysera le
+                        contenu de la page pour générer le quiz.</p>
+                </div>
+
+                <div class="text-input-container" id="text-input-container">
                     <div class="separator">
                         <span>OR</span>
                     </div>
@@ -801,107 +1246,171 @@
                     <button id="generate-btn" class="btn btn-glow">Generate Quiz</button>
                 </div>
 
-                <div id="recommendations" class="recommendations-container" style="display: none;">
-                    <h3>Suggested for You</h3>
-                    <div id="chips-wrapper" class="chips-wrapper">
-                        <!-- Recommendation chips will be injected here -->
+                <!-- How It Works Section -->
+                <div id="how-it-works"
+                    style="padding: 4rem 2rem; background: rgba(255, 255, 255, 0.02); margin-top: 4rem; border-radius: 2rem; border: 1px solid var(--glass-border); scroll-margin-top: 100px;">
+                    <div class="hero-content" style="text-align: center; margin-bottom: 3rem;">
+                        <h2 style="font-size: 2.5rem; margin-bottom: 1rem; color: white;">How <span
+                                class="gradient-text">QuizGen AI</span> Works</h2>
+                        <p style="color: var(--text-dim); max-width: 600px; margin: 0 auto;">Master any subject in 4
+                            simple steps using our advanced AI technology.</p>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 2rem;">
+                        <div class="step-card"
+                            style="background: var(--glass); padding: 2rem; border-radius: 1.5rem; border: 1px solid var(--glass-border); text-align: center; transition: 0.3s; color: white;">
+                            <div style="font-size: 2.5rem; margin-bottom: 1.5rem;">📄</div>
+                            <h3 style="margin-bottom: 0.75rem;">1. Choose Content</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-dim);">Upload PDF/Text, scan an image, or
+                                paste a website URL. Our AI adapts to your source.</p>
+                        </div>
+                        <div class="step-card"
+                            style="background: var(--glass); padding: 2rem; border-radius: 1.5rem; border: 1px solid var(--glass-border); text-align: center; transition: 0.3s; color: white;">
+                            <div style="font-size: 2.5rem; margin-bottom: 1.5rem;">⚡</div>
+                            <h3 style="margin-bottom: 0.75rem;">2. AI Generation</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-dim);">The AI analyzes the material and
+                                creates relevant MCQs with detailed explanations.</p>
+                        </div>
+                        <div class="step-card"
+                            style="background: var(--glass); padding: 2rem; border-radius: 1.5rem; border: 1px solid var(--glass-border); text-align: center; transition: 0.3s; color: white;">
+                            <div style="font-size: 2.5rem; margin-bottom: 1.5rem;">🧠</div>
+                            <h3 style="margin-bottom: 0.75rem;">3. Quiz & Learn</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-dim);">Answer questions, get instant
+                                feedback, and view references to deepen your understanding.</p>
+                        </div>
+                        <div class="step-card"
+                            style="background: var(--glass); padding: 2rem; border-radius: 1.5rem; border: 1px solid var(--glass-border); text-align: center; transition: 0.3s; color: white;">
+                            <div style="font-size: 2.5rem; margin-bottom: 1.5rem;">🏆</div>
+                            <h3 style="margin-bottom: 0.75rem;">4. Level Up</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-dim);">Earn XP, maintain daily streaks, and
+                                watch your player level grow as you master subjects.</p>
+                        </div>
                     </div>
                 </div>
             </div>
         </section>
 
-        <!-- Loading Section -->
-        <section id="loading-section">
-            <div class="loading-content">
-                <div class="ai-loader">
-                    <div class="circle"></div>
-                    <div class="circle"></div>
-                    <div class="circle"></div>
-                </div>
-                <h2>Analyzing your notes...</h2>
-                <p>Our AI is extracting key concepts and generating questions.</p>
-            </div>
-        </section>
-
-        <!-- Quiz Section -->
-        <section id="quiz-section">
-            <div class="quiz-header">
-                <div class="progress-container">
-                    <div class="progress-bar" id="progress-bar"></div>
-                </div>
-                <div class="quiz-stats">
-                    <span id="question-count">Question 1 of 5</span>
-                    <span id="timer">00:00</span>
-                </div>
-            </div>
-
-            <div id="question-container" class="question-container">
-                <!-- Question will be injected here -->
-            </div>
-
-            <div class="quiz-footer">
-                <button id="next-btn" class="btn btn-secondary" disabled>Next Question</button>
-            </div>
-        </section>
-
-        <!-- Results Section -->
-        <section id="results-section">
-            <div class="results-card">
-                <div class="confetti-container"></div>
-                <h2>Quiz Complete!</h2>
-                <div class="score-display">
-                    <div class="score-circle">
-                        <span id="final-score">80</span>
-                        <span class="percent">%</span>
-                    </div>
-                </div>
-                <p id="result-message">Great job! You've mastered most of the concepts.</p>
-
-                <div class="performance-summary">
-                    <div class="stat">
-                        <span class="label">Correct</span>
-                        <span id="correct-count" class="value text-success">4</span>
-                    </div>
-                    <div class="stat">
-                        <span class="label">Incorrect</span>
-                        <span id="incorrect-count" class="value text-danger">1</span>
-                    </div>
-                </div>
-
-                <div class="review-section">
-                    <h3>Review Your Answers</h3>
-                    <div id="review-list" class="review-list">
-                        <!-- Review items will be injected here -->
-                    </div>
-                </div>
-
-                <button class="btn btn-primary" onclick="location.reload()">Start New Quiz</button>
-            </div>
-        </section>
-        <!-- Feedback Section -->
-        <section id="feedback-section" class="active" style="margin-top: 5rem;">
-            <div class="feedback-card">
-                <h2>Have Feedback? 💬</h2>
-                <p>Help us improve your learning experience! Share your thoughts or report a bug.</p>
-                <form id="feedback-form">
-                    <div class="input-group">
-                        <input type="email" id="feedback-email" name="email" placeholder="Your Email (Optional)">
-                    </div>
-                    <div class="input-group">
-                        <textarea id="feedback-msg" name="message" placeholder="Tell us what you think..." required
-                            style="height: 100px; margin-bottom: 1rem;"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-secondary" style="width: 100%;">Send Feedback</button>
-                </form>
-                <p id="feedback-success" class="text-success" style="display: none; margin-top: 1rem;">Thank you! Your
-                    feedback has been received.</p>
-            </div>
-        </section>
     </main>
 
-    <footer>
-        <p>Built with ❤️ for better learning.</p>
-    </footer>
+    <!-- Loading Section -->
+    <section id="loading-section">
+        <div class="loading-content">
+            <div class="ai-loader">
+                <div class="circle"></div>
+                <div class="circle"></div>
+                <div class="circle"></div>
+            </div>
+            <h2>Analyzing your notes...</h2>
+            <p>Our AI is extracting key concepts and generating questions.</p>
+        </div>
+    </section>
+
+    <!-- Quiz Section -->
+    <section id="quiz-section">
+        <div class="quiz-header">
+            <div class="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <div class="quiz-stats">
+                <span id="question-count">Question 1 of 5</span>
+                <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <div id="question-container" class="question-container">
+            <!-- Question will be injected here -->
+        </div>
+
+        <div class="quiz-footer" style="display: flex; gap: 1rem; justify-content: center;">
+            <button id="skip-btn" class="btn btn-secondary"
+                style="background: rgba(255,255,255,0.05); border-color: var(--glass-border);">Skip
+                Question</button>
+            <button id="next-btn" class="btn btn-primary" disabled>Next Question</button>
+        </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results-section">
+        <div class="results-card">
+            <div class="confetti-container"></div>
+            <h2>Quiz Complete!</h2>
+            <div class="score-display">
+                <div class="score-circle">
+                    <span id="final-score">80</span>
+                    <span class="percent">%</span>
+                </div>
+            </div>
+            <p id="result-message">Great job! You've mastered most of the concepts.</p>
+
+            <div class="performance-summary">
+                <div class="stat">
+                    <span class="label">Correct</span>
+                    <span id="correct-count" class="value text-success">4</span>
+                </div>
+                <div class="stat">
+                    <span class="label">Incorrect</span>
+                    <span id="incorrect-count" class="value text-danger">1</span>
+                </div>
+                <div class="stat" id="skipped-stat">
+                    <span class="label">Skipped</span>
+                    <span id="skipped-count" class="value" style="color: var(--text-dim);">0</span>
+                </div>
+            </div>
+
+            <div class="review-section">
+                <h3>Review Your Answers</h3>
+                <div id="review-list" class="review-list">
+                    <!-- Review items will be injected here -->
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="location.reload()">Start New Quiz</button>
+        </div>
+    </section>
+    <!-- Feedback Section -->
+    <section id="feedback-section" class="active" style="margin-top: 5rem;">
+        <div class="feedback-card">
+            <h2>Have Feedback? 💬</h2>
+            <p>Help us improve your learning experience! Share your thoughts or report a bug.</p>
+            <form id="feedback-form">
+                <div class="input-group">
+                    <input type="email" id="feedback-email" name="email" placeholder="Your Email (Optional)">
+                </div>
+                <div class="input-group">
+                    <textarea id="feedback-msg" name="message" placeholder="Tell us what you think..." required
+                        style="height: 100px; margin-bottom: 1rem;"></textarea>
+                </div>
+                <button type="submit" class="btn btn-secondary" style="width: 100%;">Send Feedback</button>
+            </form>
+            <p id="feedback-success" class="text-success" style="display: none; margin-top: 1rem;">Thank you! Your
+                feedback has been received.</p>
+        </div>
+    </section>
+    </main>
+
+    <!-- Profile Management Modal -->
+    <div id="profile-modal" class="modal-overlay">
+        <div class="modal">
+            <h2 style="margin-top: 0;">Gestion des Profils</h2>
+            <p style="color: var(--text-dim); margin-bottom: 1.5rem;">Choisissez un profil ou créez-en un nouveau pour
+                enregistrer votre progression.</p>
+
+            <div class="profile-list" id="modal-profile-list">
+                <!-- Profiles injected here -->
+            </div>
+
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--glass-border);">
+                <button class="btn" id="reset-all-btn"
+                    style="width: 100%; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444;">Réinitialiser
+                    toutes les données</button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 2rem;">
+                <button class="btn btn-secondary" id="add-profile-btn">+ Nouveau Profil</button>
+                <button class="btn btn-primary" id="close-modal-btn">Fermer</button>
+            </div>
+        </div>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script type="module" src="app.js"></script>

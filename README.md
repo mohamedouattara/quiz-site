@@ -1,77 +1,67 @@
-# 🎓 QuizGen AI - Transform Your Notes into Quizzes
+# QuizGen AI 🧠✨
 
-**QuizGen AI** is a modern, high-performance web application that leverages the power of Google Gemini AI to transform your study notes, slides, or PDF documents into interactive multiple-choice quizzes. Perfect for students, teachers, and life-long learners.
+**QuizGen AI** is a premium, AI-powered learning platform that transforms your study materials into interactive, gamified quizzes. Whether you have PDF notes, textbook scans, or online articles, our tool helps you master any subject with ease.
 
----
+## 🚀 Key Features
 
-## ✨ Features
-
-- **🤖 AI-Powered Generation**: Uses Google's `Gemini 1.5/2.5 Flash` models.
-- **🔐 Secure Secrets**: API keys and IDs are managed via `.env` files (Internal mode).
-- **📄 PDF Support**: Upload your PDF lecture notes directly.
-- **⚙️ Configurable Quizzes**: Choose to generate **5, 10, 15, or 20 questions**.
-- **📊 Dynamic Analytics**: Live feedback and circular score gauge.
-- **📩 Feedback Integration**: `Formspree` support for user feedback.
-
----
+- **Multi-Source Support**: Generate quizzes from Text, PDFs, Images/Scans, or directly from a Website URL.
+- **Gamified Experience**: Earn XP, level up your profile, and maintain daily streaks (🔥).
+- **Multi-Profile System**: Separate progress, stats, and recommendations for different users or subjects.
+- **Interactive References**: Every answer comes with a pedagogical reference/explanation shown as a glassmorphism tooltip.
+- **Language Support**: Generate quizzes in French, English, Spanish, Arabic, and more.
+- **Flexible Controls**: Skip questions, adjust question counts, and permanently delete recommendation tags.
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Vanilla HTML5, CSS3, ES6+ JavaScript.
-- **AI Engine**: Google Gemini API Gateway.
-- **PDF Extraction**: PDF.js (CDN).
-- **Communication**: Formspree API (for feedback).
-- **Deployment**: Netlify ready.
+- **Frontend**: HTML5, Vanilla CSS3 (Glassmorphism), JavaScript (ES6+).
+- **AI Engine**: Google Gemini 2.5 Flash.
+- **Tools**: Vite, PDF.js, Formspree (Feedback), r.jina.ai (URL Parsing).
 
----
+## 📦 Setup & Installation
 
-## 🚀 Getting Started
-
-### 1. Prerequisites
-- [Node.js](https://nodejs.org/) installed on your machine.
-- A **Google Gemini API Key**: Get one for free at [Google AI Studio](https://aistudio.google.com/).
-- (Optional) A **Formspree ID**: Get one at [Formspree.io](https://formspree.io/).
-
-### 2. Configuration
-1. Create a `.env` file in the root directory (you can copy `.env.example`).
-2. Add your secrets:
-```env
-VITE_GEMINI_API_KEY=your_key_here
-VITE_FORMSPREE_ID=your_id_here
-```
-
-### 3. Setup & Run
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-```
-Open the provided local URL (usually [http://localhost:5173](http://localhost:5173)) in your browser.
-
-### 3. Usage
-1. Open the application.
-2. Select the **Number of Questions** you want.
-3. Upload a `.pdf`, `.txt`, or `.md` file, or paste your text directly.
-4. Click **Generate Quiz** and start learning!
-
----
-
-## ☁️ Deployment
-
-### Netlify (Recommended)
-This project is pre-configured with a `netlify.toml` file.
-
-1. **Netlify Drop**: Drag and drop the project folder onto [Netlify Drop](https://app.netlify.com/drop).
-2. **Netlify CLI**:
+1. **Clone the repository**:
    ```bash
-   npm install -g netlify-cli
-   netlify deploy --prod --dir=.
+   git clone <repository-url>
+   cd "Quiz site"
    ```
-3. **GitHub Integration**: Push this project to GitHub and connect it to Netlify for automatic deployments on every commit.
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Configure Environment Variables**:
+   Create a `.env` file in the root directory:
+   ```env
+   VITE_GEMINI_API_KEY=your_gemini_api_key_here
+   VITE_FORMSPREE_ID=your_formspree_id_here
+   ```
+
+4. **Run Development Server**:
+   ```bash
+   npm run dev
+   ```
+
+## 🏗️ Build & Production
+
+To generate an optimized production build:
+```bash
+npm run build
+```
+To preview the production build locally:
+```bash
+npm run preview
+```
+
+## 📖 How It Works
+
+1. **Choose Content**: Upload a file, scan an image, or paste a link.
+2. **AI Analysis**: Our AI extracts concepts and generates MCQs with references.
+3. **Quiz Time**: Test your knowledge and learn from instant feedback.
+4. **Progress**: Save your identity, earn XP, and level up!
+
+## ⚠️ Data & Privacy
+All progress (profiles, XP, history) is stored **locally** in your browser. Use the "Reset All Data" button in the profile settings if you wish to clear your footprint.
 
 ---
-
-## 📝 License
-Built with ❤️ for better learning. Feel free to use and improve this project!
+*Crafted with ❤️ for better learning.*
