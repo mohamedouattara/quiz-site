@@ -425,28 +425,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Safer environment variable access
-        let apiKey = '';
-        try {
-            apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-        } catch (e) {
-            console.warn('Vite environment variables not available. Falling back to UI check.');
-        }
-
-        if (!apiKey) {
-            apiKey = document.getElementById('api-key')?.value.trim();
-        }
-
-        if (!apiKey) {
-            alert('Gemini API Key is missing. Please check your .env file or the configuration.');
-            if (quizType === 'url') showSection('upload');
-            return;
-        }
-
         if (quizType !== 'url') showSection('loading');
 
         try {
-            currentQuiz = await generateQuizWithGemini(content, apiKey);
+            currentQuiz = await generateQuizWithGemini(content);
             if (!currentQuiz || currentQuiz.length === 0) {
                 throw new Error("No questions generated.");
             }
@@ -458,12 +440,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    async function generateQuizWithGemini(text, apiKey) {
+    async function generateQuizWithGemini(text) {
         const questionCount = document.getElementById('question-count-select').value || 5;
         const language = languageSelect.value || 'French';
 
-        // Using Gemimi 2.5 Flash on stable v1 endpoint as requested
-        const url = `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent`;
+        const functionUrl = `/.netlify/functions/gemini`;
 
         const prompt = `
             You are a Quiz Generator specialized in study materials. 
@@ -519,24 +500,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            console.log('Sending request to Gemini API (Multimodal:', quizType === 'image', '):', url);
-            const response = await fetch(url, {
+            console.log('Sending request to Netlify Function...');
+            const response = await fetch(functionUrl, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey
+                    'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ payload })
             });
 
             if (!response.ok) {
                 let errorMsg = `HTTP Error ${response.status}`;
                 try {
                     const errData = await response.json();
-                    errorMsg = errData.error?.message || errorMsg;
+                    errorMsg = errData.error || errorMsg;
                 } catch (e) { /* ignore non-json errors */ }
 
-                console.error('Gemini API Error:', errorMsg);
+                console.error('Function Error:', errorMsg);
                 throw new Error(errorMsg);
             }
 
