@@ -1,4 +1,5 @@
-const fetch = require('node-fetch');
+// Node.js 18+ provides a built-in fetch API, so no external dependency is needed.
+
 
 exports.handler = async (event, context) => {
     // Only allow POST requests
